@@ -3,6 +3,7 @@ import Head from "next/head"
 import Header from "../components/Header"
 import styles from "../styles/Home.module.css"
 import { Inter } from "next/font/google"
+import Operations from "../components/Operations"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -15,6 +16,7 @@ export default function Home() {
                 <link rel="icon" href="/gctoken.ico" />
             </Head>
             <Header />
+            <Operations />
             {/* header/connect button/ nav bar/ */}
         </div>
     )
