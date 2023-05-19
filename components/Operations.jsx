@@ -2,6 +2,7 @@ import { useWeb3Contract, useMoralis } from "react-moralis"
 import { abi, contractAddress } from "../constants"
 import { useEffect, useState } from "react"
 import { ethers } from "ethers"
+import { Input } from "web3uikit"
 
 export default function Operations() {
     const { isWeb3Enabled, chainId: networkIdinHex } = useMoralis()
@@ -53,13 +54,27 @@ export default function Operations() {
             updateUIValues()
         }
     }, [isWeb3Enabled])
+    const maxSupply = ethers.utils.formatUnits(supplyLimit, 18)
+    const totalMinted = ethers.utils.formatUnits(totalIssued, 18)
+    const maxBuy = maxSupply - totalMinted
 
     return (
         <div>
             <div>This page is for Operations page</div>
-            <br></br>
-            <div> Total Supply: {ethers.utils.formatUnits(supplyLimit, 18)} GC-Token(s)</div>
-            <div> Total Minted: {ethers.utils.formatUnits(totalIssued, 18)} GC-Token(s)</div>
+            <br />
+            <div> Total Supply: {maxSupply} GC-Token(s)</div>
+            <div> Total Minted: {totalMinted} GC-Token(s)</div>
+            <br />
+            <Input
+                label="How many tokens do you want to buy?"
+                onBlur={function noRefCheck() {}}
+                onChange={function noRefCheck() {}}
+                type="number"
+                validation={{
+                    numberMax: maxBuy,
+                    numberMin: 0,
+                }}
+            />
         </div>
     )
 }
