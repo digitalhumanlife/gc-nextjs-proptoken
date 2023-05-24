@@ -6,20 +6,13 @@ import { Input, Button } from "web3uikit"
 import { Moralis } from "moralis"
 
 export default function Operations() {
-    const { Moralis, isWeb3Enabled, chainId: networkIdinHex } = useMoralis()
+    const { Moralis, account, isWeb3Enabled, chainId: networkIdinHex } = useMoralis()
 
     const [totalIssued, setTotalIssued] = useState("0")
     const [supplyLimit, setSupplyLimit] = useState("0")
     const [tokenPrice, setTokenPrice] = useState("0")
+    const [balanceUser, setBalanceUser] = useState("0")
 
-    const [buyPrice, setBuyPrice] = useState("0")
-    const [buyAmount, setBuyAmount] = useState("0")
-
-    let ba
-    let bp
-
-    // let buyPrice = "0"
-    // let isValuesReady = false
     const networkId = parseInt(networkIdinHex)
     const gcTokenContractAddress =
         networkId in contractAddress ? contractAddress[networkId][0] : null
@@ -32,7 +25,10 @@ export default function Operations() {
             params: { amount: buyAm },
             msgValue: buyPr,
         }
-        await Moralis.executeFunction(buyTokens)
+        const test = await Moralis.executeFunction(buyTokens)
+        await test.wait(1)
+        console.log("test confirmed: ", test)
+        updateUIValues()
     }
 
     const { runContractFunction: getTotalIssued } = useWeb3Contract({
@@ -56,6 +52,20 @@ export default function Operations() {
         params: {},
     })
 
+    const { runContractFunction: getBalanceOf } = useWeb3Contract({
+        abi: abi,
+        contractAddress: gcTokenContractAddress, // specify the networkId
+        functionName: "balanceOf",
+        params: { account: account },
+    })
+
+    const { runContractFunction: getDivBalanceOf } = useWeb3Contract({
+        abi: abi,
+        contractAddress: gcTokenContractAddress, // specify the networkId
+        functionName: "getDivBalanceOf",
+        params: { account: account },
+    })
+
     async function updateUIValues() {
         const supply = (await getSupplyLimit()).toString()
         console.log("Supply Limit: ", supply)
@@ -69,15 +79,6 @@ export default function Operations() {
         setTokenPrice(tokenPrice)
     }
 
-    async function useEffectBuyTokens() {
-        console.log("buyPrice updated:", buyPrice.toString())
-        console.log("buyAmount updated:", buyAmount.toString())
-        await buyTokens({
-            onSuccess: () => {},
-            onError: (error) => console.log(error),
-        })
-    }
-
     useEffect(() => {
         if (isWeb3Enabled) {
             console.log("Updating UI Values")
@@ -85,15 +86,10 @@ export default function Operations() {
         }
     }, [isWeb3Enabled])
 
-    // useEffect(() => {
-    //     // Actions to perform when buyPrice or buyAmount updates
-    //     console.log("buyPrice updated:", buyPrice.toString())
-    //     console.log("buyAmount updated:", buyAmount.toString())
-    //     useEffectBuyTokens()
-    // }, [buyAmount])
-
     const maxSupply = ethers.utils.formatUnits(supplyLimit, 18)
     const totalMinted = ethers.utils.formatUnits(totalIssued, 18)
+    const userBalance = ethers.utils.formatUnits(balanceUser, 18)
+
     const tokenPriceInEth = tokenPrice //ethers.utils.formatUnits(tokenPrice * 10 ** 18, 18)
     const maxBuy = maxSupply - totalMinted
     let typedAmount = 0
@@ -102,17 +98,29 @@ export default function Operations() {
         <div>
             <div>This page is for Operations page</div>
             <br />
-            <div>
-                Total Supply: {maxSupply} GCT Token(s) <br />
-                Token Price per token: {tokenPriceInEth} ETH
-                <br />
-                <br />
-                {totalMinted} GCT Token(s) minted
-                <br />
-                {maxBuy} GCT Token(s) left to buy
+            <div className="card">
+                <div className="card-title">
+                    <h2>Sinsa Villa GCT Tokens</h2>
+                </div>
+                <div className="card-content">
+                    <div className="token-info">
+                        <p>
+                            Total Supply: {maxSupply} GCT Token(s) ({tokenPriceInEth} ETH / Token)
+                        </p>
+                    </div>
+                    <div className="image-container">
+                        <img className="token-image" src="/318.jpg" alt="Token Image" />
+                    </div>
+                </div>
+                <div className="card-footer">
+                    <p>{totalMinted} GCT Token(s) minted</p>
+                    <p>{maxBuy} GCT Token(s) left to buy</p>
+                </div>
+                <div className="font-bold">You have {userBalance} GCT Token(s) in your wallet.</div>
             </div>
             <br />
-            <div class="flex">
+            <br />
+            <div className="flex">
                 <Input
                     label="How many tokens do you want to buy?"
                     onChange={(event) => {
@@ -137,26 +145,7 @@ export default function Operations() {
                             console.log("buyAmountInWei: " + buyAmountInWei)
                             console.log("enteredToDecimal: " + enteredToDecimal)
 
-                            setBuyPrice(buyAmountInWei)
-                            setBuyAmount(enteredToDecimal)
-
-                            // isValuesReady = true
-
-                            console.log("BuyPrice: " + buyPrice)
-                            console.log("BuyAmount: " + buyAmount)
-
                             buybuy(buyAmountInWei, enteredToDecimal)
-                            // await buyTokens()
-                            // await buyTokens(buyAmount, {
-                            //     value: buyPrice,
-                            //     onSuccess: () => {},
-                            //     onError: (error) => console.log(error),
-                            // })
-
-                            // await buyTokens({
-                            //     onSuccess: () => {},
-                            //     onError: (error) => console.log(error),
-                            // })
                             console.log("BUYING TOKENS...")
                         }
                     }}
@@ -165,6 +154,45 @@ export default function Operations() {
                     theme="outline"
                 />
             </div>
+            <div className="p-2">
+                <Button
+                    onClick={async () => {
+                        const userDivAmountTx = await getDivBalanceOf()
+                    }}
+                    text="Get dividend amount"
+                    size="small"
+                    theme="outline"
+                />
+            </div>
+            <style jsx>{`
+                .card {
+                    border: 2px solid #ccc;
+                    border-radius: 10px;
+                    padding: 20px;
+                    display: inline-block;
+                }
+                .card-title {
+                    font-weight: bold;
+                }
+                ,
+                .card-content,
+                .card-footer {
+                    margin-bottom: 10px;
+                }
+                .image-container {
+                    text-align: center;
+                }
+                .token-image {
+                    max-width: 100%;
+                }
+                .token-info {
+                    text-align: left;
+                }
+                .flex {
+                    display: flex;
+                    align-items: center;
+                }
+            `}</style>
         </div>
     )
 }
