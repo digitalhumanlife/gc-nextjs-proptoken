@@ -73,10 +73,12 @@ export default function Operations() {
         console.log("Total Minted: ", totalMinted)
         const tokenPrice = (await getTokenPrice()).toString()
         console.log("Token Price: ", tokenPrice)
-
+        const balanceUser = (await getBalanceOf()).toString()
+        console.log("User Balance: ", balanceUser)
         setSupplyLimit(supply)
         setTotalIssued(totalMinted)
         setTokenPrice(tokenPrice)
+        setBalanceUser(balanceUser)
     }
 
     useEffect(() => {
@@ -158,6 +160,7 @@ export default function Operations() {
                 <Button
                     onClick={async () => {
                         const userDivAmountTx = await getDivBalanceOf()
+                        console.log("userDivAmountTx: ", userDivAmountTx)
                     }}
                     text="Get dividend amount"
                     size="small"
