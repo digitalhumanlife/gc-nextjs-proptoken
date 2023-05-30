@@ -159,8 +159,12 @@ export default function Operations() {
             <div className="p-2">
                 <Button
                     onClick={async () => {
-                        const userDivAmountTx = await getDivBalanceOf()
-                        console.log("userDivAmountTx: ", userDivAmountTx)
+                        //const userDivAmountTx = await getDivBalanceOf() // .toString()
+                        const provider = new ethers.providers.Web3Provider(window.ethereum)
+                        const contract = new ethers.Contract(gcTokenContractAddress, abi, provider)
+                        const result = await contract.callStatic.getDivBalanceOf(account)
+                        //console.log("userDivAmountTx: ", userDivAmountTx)
+                        console.log("Static result: ", result.toString())
                     }}
                     text="Get dividend amount"
                     size="small"
