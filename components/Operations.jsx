@@ -12,6 +12,7 @@ export default function Operations() {
     const [supplyLimit, setSupplyLimit] = useState("0")
     const [tokenPrice, setTokenPrice] = useState("0")
     const [balanceUser, setBalanceUser] = useState("0")
+    const [currentDivState, setCurrentDivAmount] = useState("0")
 
     const networkId = parseInt(networkIdinHex)
     const gcTokenContractAddress =
@@ -59,10 +60,10 @@ export default function Operations() {
         params: { account: account },
     })
 
-    const { runContractFunction: getDivBalanceOf } = useWeb3Contract({
+    const { runContractFunction: withdrawDiv } = useWeb3Contract({
         abi: abi,
         contractAddress: gcTokenContractAddress, // specify the networkId
-        functionName: "getDivBalanceOf",
+        functionName: "withdrawDiv",
         params: { account: account },
     })
 
@@ -79,6 +80,7 @@ export default function Operations() {
         setTotalIssued(totalMinted)
         setTokenPrice(tokenPrice)
         setBalanceUser(balanceUser)
+        getDivAmount()
     }
 
     useEffect(() => {
@@ -95,6 +97,19 @@ export default function Operations() {
     const tokenPriceInEth = tokenPrice //ethers.utils.formatUnits(tokenPrice * 10 ** 18, 18)
     const maxBuy = maxSupply - totalMinted
     let typedAmount = 0
+
+    async function getDivAmount() {
+        try {
+            const provider = new ethers.providers.Web3Provider(window.ethereum)
+            const contract = new ethers.Contract(gcTokenContractAddress, abi, provider)
+            const result = await contract.callStatic.getDivBalanceOf(account)
+            setCurrentDivAmount(ethers.utils.formatUnits(result.toString(), 18))
+            console.log("result: ", currentDivState)
+        } catch (e) {
+            console.log(e)
+            setCurrentDivAmount(0)
+        }
+    }
 
     return (
         <div>
@@ -118,58 +133,70 @@ export default function Operations() {
                     <p>{totalMinted} GCT Token(s) minted</p>
                     <p>{maxBuy} GCT Token(s) left to buy</p>
                 </div>
-                <div className="font-bold">You have {userBalance} GCT Token(s) in your wallet.</div>
-            </div>
-            <br />
-            <br />
-            <div className="flex">
-                <Input
-                    label="How many tokens do you want to buy?"
-                    onChange={(event) => {
-                        typedAmount = event.target.value
-                        console.log("Entered: " + typedAmount)
-                    }}
-                    type="number"
-                    validation={{
-                        numberMax: maxBuy,
-                        numberMin: 0,
-                        required: true,
-                    }}
-                />
-                <p>&nbsp;&nbsp;&nbsp;</p>
-                <Button
-                    onClick={async () => {
-                        if (typedAmount > 0 && typedAmount <= maxBuy) {
-                            const totalAmountToBuy = (typedAmount * tokenPrice).toString()
-                            const buyAmountInWei = ethers.utils.parseUnits(totalAmountToBuy, 18)
-                            const enteredToDecimal = ethers.utils.parseUnits(typedAmount, 18)
+                <div className="font-bold">
+                    You have {userBalance} GCT Token(s) in your wallet.
+                    <br />
+                    Current payout: {currentDivState} ETH
+                </div>
 
-                            console.log("buyAmountInWei: " + buyAmountInWei)
-                            console.log("enteredToDecimal: " + enteredToDecimal)
+                <br />
 
-                            buybuy(buyAmountInWei, enteredToDecimal)
-                            console.log("BUYING TOKENS...")
-                        }
-                    }}
-                    text="Buy!"
-                    size="small"
-                    theme="outline"
-                />
-            </div>
-            <div className="p-2">
-                <Button
-                    onClick={async () => {
-                        //const userDivAmountTx = await getDivBalanceOf() // .toString()
-                        const provider = new ethers.providers.Web3Provider(window.ethereum)
-                        const contract = new ethers.Contract(gcTokenContractAddress, abi, provider)
-                        const result = await contract.callStatic.getDivBalanceOf(account)
-                        //console.log("userDivAmountTx: ", userDivAmountTx)
-                        console.log("Static result: ", result.toString())
-                    }}
-                    text="Get dividend amount"
-                    size="small"
-                    theme="outline"
-                />
+                <div className="flex">
+                    <Input
+                        label="How many tokens do you want to buy?"
+                        onChange={(event) => {
+                            typedAmount = event.target.value
+                            console.log("Entered: " + typedAmount)
+                        }}
+                        type="number"
+                        validation={{
+                            numberMax: maxBuy,
+                            numberMin: 0,
+                            required: true,
+                        }}
+                        theme="outline"
+                    />
+                    <p>&nbsp;&nbsp;&nbsp;</p>
+
+                    <Button
+                        onClick={async () => {
+                            if (typedAmount > 0 && typedAmount <= maxBuy) {
+                                const totalAmountToBuy = (typedAmount * tokenPrice).toString()
+                                const buyAmountInWei = ethers.utils.parseUnits(totalAmountToBuy, 18)
+                                const enteredToDecimal = ethers.utils.parseUnits(typedAmount, 18)
+
+                                console.log("buyAmountInWei: " + buyAmountInWei)
+                                console.log("enteredToDecimal: " + enteredToDecimal)
+
+                                buybuy(buyAmountInWei, enteredToDecimal)
+                                console.log("BUYING TOKENS...")
+                            }
+                        }}
+                        text="Buy!"
+                        size="large"
+                        theme="primary"
+                    />
+                </div>
+                <br />
+                <div className="flex">
+                    <Button
+                        style={{ display: currentDivState <= 0 ? "none" : null }}
+                        onClick={async () => {
+                            // const provider = new ethers.providers.Web3Provider(window.ethereum)
+                            // const contract = new ethers.Contract(gcTokenContractAddress, abi, provider)
+                            // const result = await contract.callStatic.getDivBalanceOf(account)
+                            // setCurrentDivAmount(ethers.utils.formatUnits(result.toString(), 18))
+                            console.log("result: ", currentDivState)
+                            if (currentDivState > 0) {
+                                withdrawDiv()
+                            }
+                        }}
+                        text={`Get dividend amount ${currentDivState} ETH`}
+                        size="large"
+                        color="red"
+                        theme="colored"
+                    />
+                </div>
             </div>
             <style jsx>{`
                 .card {
@@ -190,7 +217,7 @@ export default function Operations() {
                     text-align: center;
                 }
                 .token-image {
-                    max-width: 100%;
+                    max-width: 90%;
                 }
                 .token-info {
                     text-align: left;
