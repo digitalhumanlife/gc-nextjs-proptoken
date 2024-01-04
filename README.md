@@ -1,3 +1,17 @@
+# gc erc20 token front-end test website
+
+1. run 'gc-erc20-proptoken' on localhost
+   
+   1.1 hh node
+   
+   1.2 hh deploy --network localhost
+   
+   1.3 hh run script/mint-gct.js
+   
+3. run the front-end: yarn dev
+   
+4. login with metamask
+   
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
